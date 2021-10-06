@@ -1,5 +1,6 @@
-git+https://github.com/ofabel/pytm-bootstrap.git@master#egg=pytm-bootstrap
+git+https://github.com/ofabel/pytm-bootstrap.git@master#egg=pytm
 matplotlib~=3.4.3
 numpy==1.21.2
 pandas==1.3.3
 scipy==1.7.1
+openpyxl==3.0.9
