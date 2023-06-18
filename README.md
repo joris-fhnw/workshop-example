@@ -4,7 +4,7 @@ This is an example exercise for the Python Tool Manager.
 
 ## Requirements
 
-* Python >= 3.6
+* Python >= 3.9
 * Access to the Python Tool Manager
 * Pycharm CE or Professional (not mandatory, but recommended)
 * Basic knowledge in the Python programming language
@@ -27,7 +27,7 @@ python -m venv venv
 ````
 
 This will create a new `venv` folder, containing the virtual environment. It is mandatory, that the folder is
-named `venv`. Otherwise you need to adjust the `.dockerignore` file.
+named `venv`. Otherwise, you need to adjust the `.dockerignore` file.
 
 ## Hints
 
