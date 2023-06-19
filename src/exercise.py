@@ -2,10 +2,10 @@ from typing import List
 
 from matplotlib.figure import Figure
 from matplotlib.pyplot import Axes
-from pytm import AbstractExercise
-from pytm import Latex
-from pytm import Option
-from pytm import Output
+from pytmlib import AbstractExercise
+from pytmlib import Latex
+from pytmlib import Option
+from pytmlib import Output
 
 from .helpers import *
 
