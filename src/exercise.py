@@ -1,88 +1,94 @@
-from typing import List
 
+from typing import List
+import random
 from matplotlib.figure import Figure
 from matplotlib.pyplot import Axes
 from pytmlib import AbstractExercise
 from pytmlib import Latex
-from pytmlib import Option
 from pytmlib import Output
+import numpy as np
 
-from .helpers import *
-
+max = [3.1,4.2,5.3]
+step = [0.1,0.2,0.3]
+z = [0,1,2]
 
 class Exercise(AbstractExercise):
-    def start(self, gas: float = None, temp: str = None) -> Output:
-        options: List[Option] = list(map(lambda opt: Option(opt[0], Latex(opt[1]), opt[0] == gas),
-                                         self._get_option_map()))
+    @property
+    def version(self) -> str:
+        return "1.0.0"
+
+    def start(self, schnittpunkt: str = None,counter: int = 0) -> Output:
+        if counter == 0:
+            i = random.choice(z)
+            a = np.arange(step[i], max[i], step[i])
 
         return self.output \
-            .add_paragraph(Latex(r'''
-            Mit diesem Tool können Sie die mittlere Wärmekapazität (Cp) und Entropie-Temperaturfunktion (s0) der 
-            idealen Gase (Air, $\mathrm{N_{2}*}$, $\mathrm{N_{2}}$, $\mathrm{O_{2}}$, $\mathrm{CO_{2}}$, 
-            $\mathrm{H_{2}O}$, $\mathrm{SO_{2}}$) bei einer Temperatur zwischen -60 und 2'200 °C bestimmen. 
-            ''')) \
-            .add_option_group(name='gas',
-                              label=Latex(r'Ideales Gas auswählen:'),
-                              options=options,
-                              inline=False) \
-            .add_number_field(name='temp',
-                              label=Latex(r'Tragen Sie die Temperatur ein, in °C'),
-                              value=temp,
-                              min_value=-60,
+            .add_paragraph(Latex(f'''Gegeben ist ein Vektor a: [{a[0]}, {round(a[1],2)}, {round(a[2],2)},...{round(a[-1],2)}]\n
+              und zwei Gleichungen:\n 
+              - $\mathrm b_i$ = $\mathrm a_i$ * $\mathrm a_i$ \n
+              - $\mathrm c_i$ = $\mathrm a_i$ + $\mathrm a_i$\n
+              ''')) \
+            .add_number_field(name='schnittpunkt',
+                              label=Latex(r'ab welchem Wert von $\mathrm a_i$ ist $\mathrm b_i$ grösser als'
+                                          r' $\mathrm c_i$?'),
+                              value=schnittpunkt,
+                              min_value=0,
                               max_value=2200,
                               step=0.01) \
-            .add_action('Calculate', self.calculate)
+            .add_action('Lösung', self.calculate,a=a)\
+            .add_action("Analytischer Lösungsweg",self.analytic_solution)
 
-    def calculate(self, gas: str, temp: float) -> Output:
-        gas_config = list(filter(lambda config: config[0] == gas, self._get_option_map()))[0]
 
-        cp_command = gas_config[2]
-        cp = np.around(cp_command(temp), 4)
+    def analytic_solution(self,schnittpunkt: float):
+        return self.output \
+            .add_image(".\static\Analytic_solution.PNG") \
+            .add_action('Back to start', self.start, schnittpunkt=schnittpunkt)
 
-        s0_command = gas_config[3]
-        s0 = np.around(s0_command(temp), 4)
 
-        # Plotting the data
-        temp_range = np.linspace(-50, 2200, 200)  # the range of data is -60 °C  to 2'200 °C
+    def calculate(self, schnittpunkt: float, a:float) -> Output:
+
+        # Berechne die Vektoren b und c
+        b = a ** 2
+        c = a + a
+
+        # Finde den Schnittpunkt
+        try:
+            intersection_index = np.where(b >= c)[0][0]
+        except:
+            intersection_index = np.where(b > c)[0][0]
+
+        intersection_a = a[intersection_index]
+        intersection_b = b[intersection_index]
+        intersection_c = c[intersection_index]
+
+        # Überprüfen des Resultats
+        if intersection_a == schnittpunkt:
+            answ = "Richtig"
+        else:
+            answ = "Falsch, schauen Sie sich das Diagramm mit dem Plot an"
+
+        fig_width_size= 10
+        fig_height_size= 5
 
         figure: Figure = Figure()
+        plot1: Axes = figure.add_subplot(1,1,1)
+        # Plotte die Kurven
+        plot1.plot(a, b,"x", label='b = a^2')
+        plot1.plot(a, c,"o", label='c = a + a')
+        plot1.scatter(intersection_a, intersection_b, color='red', label=f'b>c ab einem Wert von:'
+                                                                         f' {round(intersection_a,3)}')
 
-        plot1: Axes = figure.add_subplot(2, 1, 1)
-        plot1.plot(temp_range, cp_command(temp_range), label=cp_command.__name__)
-        plot1.set_title('Cp_averages from 0 °C to t(°C)')
-        plot1.set_xlabel('Final Temperature [deg C]')
-        plot1.set_ylabel('Cp_ave in kJ/(kg K)')
-        plot1.legend(loc='best')
+        # Beschriftungen
+        plot1.set_xlabel('a')
+        plot1.set_ylabel('Wert')
+        plot1.legend()
         plot1.grid()
-
-        plot2 = figure.add_subplot(2, 1, 2)
-        plot2.plot(temp_range, s0_command(temp_range), label=s0_command.__name__)
-        plot2.set_title('s0-Function')
-        plot2.set_xlabel('Final Temperature [deg C]')
-        plot2.set_ylabel('s0 Function in kJ/(kg K)')
-        plot2.legend(loc='best')
-        plot2.grid()
-
+        figure.set_figwidth(fig_width_size)
+        figure.set_figheight(fig_height_size)
         figure.tight_layout()
 
         return self.output \
-            .add_paragraph(Latex(r'''
-            Die mittlere Wärmekapazität Cp für {gas} im Bereich 0°C bis {temp} °C ist: {cp} in kJ/(kg K).
-            '''.format(gas=gas_config[1], temp=temp, cp=cp))) \
-            .add_paragraph(Latex(r'''
-            Die  Entropie-Temperaturfunktion s0 für {gas} bei {temp} °C ist: {s0} in kJ/(kg K).
-            '''.format(gas=gas_config[1], temp=temp, s0=s0))) \
+            .add_paragraph(Latex(f''' {answ}''')) \
             .add_figure(figure) \
-            .add_action('Back to start', self.start, gas=gas, temp=temp)
+            .add_action('Back to start', self.start, schnittpunkt=schnittpunkt)
 
-    @staticmethod
-    def _get_option_map() -> list:
-        return [
-            ['Air', r'Air', Cp_ave_Air, s_abs_Air],
-            ['N2s', r'Luftstickstoff', Cp_ave_N2s, s_abs_N2s],
-            ['N2', r'$\mathrm{N_{2}}$', Cp_ave_N2, s_abs_N2],
-            ['O2', r'$\mathrm{O_{2}}$', Cp_ave_O2, s_abs_O2],
-            ['CO2', r'$\mathrm{CO_{2}}$', Cp_ave_CO2, s_abs_CO2],
-            ['H2O', r'$\mathrm{H_{2}O}$', Cp_ave_H2O, s_abs_H2O],
-            ['SO2', r'$\mathrm{SO_{2}}$', Cp_ave_SO2, s_abs_SO2],
-        ]
