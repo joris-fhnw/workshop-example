@@ -4,8 +4,6 @@ import matplotlib.pyplot as plt
 import matplotlib
 # matplotlib.use("Qt5Agg")  # Qt5Agg
 
-
-
 max = [3.1,4.2,5.2]
 step = [0.1,0.2,0.3]
 z = [0,1,2]
@@ -15,7 +13,7 @@ i = random.choice(z)
 a = np.arange(step[i], max[i], step[i])
 print(a)
 # Berechne die Vektoren b und c
-b = a ** 2
+b = a **2
 c = a + a
 
 # Finde den Schnittpunkt
@@ -41,3 +39,4 @@ plt.legend()
 
 # Zeige den Plot
 plt.show()
+# new line
